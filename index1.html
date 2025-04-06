@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KDJ Salon - Modern Hair & Beauty Experience</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.3/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Montserrat:wght@100;200;300;400;500;600;700;800;900&display=swap">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'serif': ['Cormorant Garamond', 'serif'],
+                        'sans': ['Montserrat', 'sans-serif'],
+                    },
+                    colors: {
+                        'salon': {
+                            50: '#FFF5F7',
+                            100: '#FFEBEF',
+                            200: '#FECDD8',
+                            300: '#FDA4BA',
+                            400: '#FB6090',
+                            500: '#F83B75',
+                            600: '#E01F5C',
+                            700: '#B61A4E',
+                            800: '#8F1A45',
+                            900: '#731A3D',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .hero-particles { position: absolute; top: 0; left: 0; z-index: 0; width: 100%; height: 100vh; }
+        .scrolled { backdrop-filter: blur(10px); background-color: rgba(255, 255, 255, 0.8); }
+        .service-card { transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1); }
+        .service-card:hover { transform: translateY(-8px); }
+        .gallery-item { overflow: hidden; position: relative; }
+        .gallery-item img { transition: transform 0.7s ease; }
+        .gallery-item:hover img { transform: scale(1.05); }
+        .gallery-item::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.3) 100%);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+        .gallery-item:hover::after { opacity: 1; }
+        .testimonial-card { transition: all 0.5s ease; }
+        .testimonial-card:hover { transform: translateY(-5px); }
+        
+        /* Custom cursor */
+        .custom-cursor {
+            position: fixed;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: rgba(248, 59, 117, 0.5);
+            pointer-events: none;
+            z-index: 9999;
+            mix-blend-mode: difference;
+            transition: transform 0.1s ease;
+        }
+        
+        /* Animated gradients */
+        .animated-gradient {
+            background: linear-gradient(-45deg, #F83B75, #FDA4BA, #FECDD8, #FFF5F7);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+        
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        /* Animation classes */
+        .fade-in-up {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+        
+        .fade-in-up.appear {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        /* Horizontal scroll gallery */
+        .horizontal-scroll {
+            display: flex;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none; /* Firefox */
+        }
+        
+        .horizontal-scroll::-webkit-scrollbar {
+            display: none; /* Chrome, Safari, Edge */
+        }
+        
+        .horizontal-scroll > div {
+            scroll-snap-align: start;
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+<body class="font-sans text-gray-800 overflow-x-hidden">
+    <!-- Custom cursor -->
+    <div class="custom-cursor hidden md:block"></div>
+
+    <!-- Three.js Hero Background -->
+    <div id="three-container" class="fixed top-0 left-0 w-full h-screen -z-10"></div>
+
+    <!-- Hero Section -->
+    <section class="relative min-h-screen flex items-center justify-center overflow-hidden">
+        <div class="container mx-auto px-4 z-10 text-center">
+            <h1 class="text-5xl md:text-7xl lg:text-8xl font-serif font-light text-white mb-4 tracking-tight">
+                <span class="block opacity-0 transition-all duration-1000 delay-300" id="hero-title-1">KDJ</span>
+                <span class="block text-salon-400 font-bold opacity-0 transition-all duration-1000 delay-700" id="hero-title-2">Salon</span>
+            </h1>
+            <p class="text-xl md:text-2xl text-white font-light mb-10 max-w-xl mx-auto opacity-0 transition-all duration-1000 delay-1000" id="hero-subtitle">
+                Where artistry meets beauty in a luxurious experience designed just for you
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center opacity-0 transition-all duration-1000 delay-1300" id="hero-buttons">
+                <a href="#appointment" class="bg-salon-500 hover:bg-salon-600 text-white font-medium py-3 px-8 rounded-full transition duration-300 transform hover:scale-105 hover:shadow-lg">
+                    Book Your Experience
+                </a>
+                <a href="#services" class="bg-transparent border-2 border-white text-white hover:bg-white hover:text-salon-500 font-medium py-3 px-8 rounded-full transition duration-300 transform hover:scale-105">
+                    Explore Services
+                </a>
+            </div>
+        </div>
+        
+        <!-- p5.js floating particles -->
+        <div class="hero-particles" id="p5-container"></div>
+        
+        <!-- Scroll indicator -->
+        <div class="absolute bottom-10 left-1/2 transform -translate-x-1/2 text-white opacity-0 transition-all duration-1000 delay-1500" id="scroll-indicator">
+            <p class="text-sm mb-2 text-center">Scroll to discover</p>
+            <div class="animate-bounce flex justify-center">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+                </svg>
+            </div>
+        </div>
+    </section>
+
+    <!-- Navigation -->
+    <nav id="main-nav" class="fixed top-0 w-full py-4 transition-all duration-300 z-50">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-between items-center">
+                <a href="#" class="text-2xl font-serif font-bold text-salon-500">KDJ</a>
+                
+                <!-- Desktop Menu -->
+                <div class="hidden lg:flex space-x-8">
+                    <a href="#" class="text-white hover:text-salon-300 transition duration-300">Home</a>
+                    <a href="#about" class="text-white hover:text-salon-300 transition duration-300">About</a>
+                    <a href="#services" class="text-white hover:text-salon-300 transition duration-300">Services</a>
+                    <a href="#gallery" class="text-white hover:text-salon-300 transition duration-300">Gallery</a>
+                    <a href="#testimonials" class="text-white hover:text-salon-300 transition duration-300">Testimonials</a>
+                    <a href="#team" class="text-white hover:text-salon-300 transition duration-300">Team</a>
+                    <a href="#contact" class="text-white hover:text-salon-300 transition duration-300">Contact</a>
+                </div>
+                
+                <!-- Book Button -->
+                <a href="#appointment" class="hidden lg:block bg-salon-500 hover:bg-salon-600 text-white text-sm font-medium py-2 px-6 rounded-full transition duration-300 transform hover:scale-105">
+                    Book Now
+                </a>
+                
+                <!-- Mobile Menu Button -->
+                <button id="mobile-menu-button" class="lg:hidden text-white focus:outline-none">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
+            </div>
+            
+            <!-- Mobile Menu -->
+            <div id="mobile-menu" class="lg:hidden hidden pt-4 pb-4 mt-4 border-t border-white/10">
+                <a href="#" class="block py-2 text-white hover:text-salon-300">Home</a>
+                <a href="#about" class="block py-2 text-white hover:text-salon-300">About</a>
+                <a href="#services" class="block py-2 text-white hover:text-salon-300">Services</a>
+                <a href="#gallery" class="block py-2 text-white hover:text-salon-300">Gallery</a>
+                <a href="#testimonials" class="block py-2 text-white hover:text-salon-300">Testimonials</a>
+                <a href="#team" class="block py-2 text-white hover:text-salon-300">Team</a>
+                <a href="#contact" class="block py-2 text-white hover:text-salon-300">Contact</a>
+                <a href="#appointment" class="inline-block mt-2 bg-salon-500 hover:bg-salon-600 text-white text-sm font-medium py-2 px-6 rounded-full transition duration-300">
+                    Book Now
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- About Section -->
+    <section id="about" class="py-20 bg-white">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+                <!-- About Image with animated border -->
+                <div class="relative fade-in-up">
+                    <div class="absolute inset-0 animated-gradient rounded-2xl transform -rotate-3"></div>
+                    <div class="relative bg-gray-200 h-96 md:h-[600px] rounded-2xl overflow-hidden transform rotate-3 hover:rotate-0 transition-all duration-500">
+                        <!-- Placeholder for image -->
+                        <div class="w-full h-full flex items-center justify-center text-gray-400">
+                            <i class="fas fa-image text-6xl"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- About Content -->
+                <div class="fade-in-up">
+                    <h2 class="text-lg text-salon-500 font-medium mb-2">Our Story</h2>
+                    <h3 class="text-4xl md:text-5xl font-serif font-light mb-8">Redefining Beauty Since <span class="text-salon-500 font-bold">2018</span></h3>
+                    
+                    <p class="text-gray-600 mb-6">KDJ Salon was born from a vision to create not just a salon, but an immersive beauty experience where expertise meets luxury. Our team of highly skilled artists are passionate about enhancing your natural beauty while providing a space for relaxation and transformation.</p>
+                    
+                    <p class="text-gray-600 mb-8">We blend traditional techniques with cutting-edge approaches, staying at the forefront of beauty innovation while maintaining our commitment to personalized care and exceptional results.</p>
+                    
+                    <!-- Stats -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                        <div class="text-center">
+                            <div class="text-4xl font-serif text-salon-500 font-bold">12+</div>
+                            <div class="text-sm text-gray-500">Expert Stylists</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-4xl font-serif text-salon-500 font-bold">5+</div>
+                            <div class="text-sm text-gray-500">Years of Excellence</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-4xl font-serif text-salon-500 font-bold">2.5k+</div>
+                            <div class="text-sm text-gray-500">Happy Clients</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-4xl font-serif text-salon-500 font-bold">3</div>
+                            <div class="text-sm text-gray-500">Award Winning</div>
+                        </div>
+                    </div>
+                    
+                    <!-- CTA -->
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <a href="#team" class="bg-salon-500 hover:bg-salon-600 text-white font-medium py-3 px-8 rounded-full transition duration-300 text-center">
+                            Meet Our Team
+                        </a>
+                        <a href="#services" class="bg-transparent border-2 border-salon-500 text-salon-500 hover:bg-salon-50 font-medium py-3 px-8 rounded-full transition duration-300 text-center">
+                            View Services
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Interactive Feature Section -->
+    <section class="py-16 bg-gray-50 overflow-hidden">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-16 fade-in-up">
+                <h2 class="text-lg text-salon-500 font-medium mb-2">Why Choose Us</h2>
+                <h3 class="text-4xl font-serif font-light">Experience the KDJ <span class="text-salon-500 font-bold">Difference</span></h3>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Feature 1 -->
+                <div class="bg-white rounded-xl shadow-xl p-8 fade-in-up relative overflow-hidden group">
+                    <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-salon-300 to-salon-500 transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500"></div>
+                    <div class="text-salon-500 text-4xl mb-4">
+                        <i class="fas fa-award"></i>
+                    </div>
+                    <h4 class="text-xl font-bold mb-4">Premium Experience</h4>
+                    <p class="text-gray-600">From the moment you enter our salon, you'll be immersed in luxury. Enjoy complimentary refreshments, relaxing ambiance, and personalized consultations.</p>
+                </div>
+                
+                <!-- Feature 2 -->
+                <div class="bg-white rounded-xl shadow-xl p-8 fade-in-up relative overflow-hidden group">
+                    <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-salon-300 to-salon-500 transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500"></div>
+                    <div class="text-salon-500 text-4xl mb-4">
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <h4 class="text-xl font-bold mb-4">Expert Artistry</h4>
+                    <p class="text-gray-600">Our team consists of industry-leading professionals who undergo continuous education to master the latest techniques and trends.</p>
+                </div>
+                
+                <!-- Feature 3 -->
+                <div class="bg-white rounded-xl shadow-xl p-8 fade-in-up relative overflow-hidden group">
+                    <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-salon-300 to-salon-500 transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500"></div>
+                    <div class="text-salon-500 text-4xl mb-4">
+                        <i class="fas fa-gem"></i>
+                    </div>
+                    <h4 class="text-xl font-bold mb-4">Luxury Products</h4>
+                    <p class="text-gray-600">We use and recommend only the highest quality, premium products that deliver exceptional results and maintain the health of your hair and skin.</p>
+                </div>
+            </div>
+            
+            <!-- Interactive Feature Slider -->
+            <div class="mt-16 relative fade-in-up">
+                <div class="flex overflow-x-auto pb-8 snap-x snap-mandatory horizontal-scroll hide-scrollbar" id="feature-slider">
+                    <!-- Feature Slide 1 -->
+                    <div class="min-w-full md:min-w-[33.333%] px-4 snap-start">
+                        <div class="bg-gradient-to-br from-salon-500 to-salon-700 rounded-xl p-8 text-white h-full">
+                            <h4 class="text-xl font-bold mb-4">Beauty Consultations</h4>
+                            <p class="mb-4">Our complimentary consultations ensure we understand your vision and create a personalized beauty plan.</p>
+                            <a href="#appointment" class="inline-block text-sm font-bold hover:underline mt-2">Book a Consultation <i class="fas fa-arrow-right ml-1"></i></a>
+                        </div>
+                    </div>
+                    
+                    <!-- Feature Slide 2 -->
+                    <div class="min-w-full md:min-w-[33.333%] px-4 snap-start">
+                        <div class="bg-gradient-to-br from-salon-500 to-salon-700 rounded-xl p-8 text-white h-full">
+                            <h4 class="text-xl font-bold mb-4">Virtual Try-On</h4>
+                            <p class="mb-4">Experiment with different hair colors and styles using our virtual try-on technology before committing.</p>
+                            <a href="#" class="inline-block text-sm font-bold hover:underline mt-2">Learn More <i class="fas fa-arrow-right ml-1"></i></a>
+                        </div>
+                    </div>
+                    
+                    <!-- Feature Slide 3 -->
+                    <div class="min-w-full md:min-w-[33.333%] px-4 snap-start">
+                        <div class="bg-gradient-to-br from-salon-500 to-salon-700 rounded-xl p-8 text-white h-full">
+                            <h4 class="text-xl font-bold mb-4">Membership Program</h4>
+                            <p class="mb-4">Join our exclusive membership for priority booking, special discounts, and complimentary treatments.</p>
+                            <a href="#" class="inline-block text-sm font-bold hover:underline mt-2">Join Now <i class="fas fa-arrow-right ml-1"></i></a>
+                        </div>
+                    </div>
+                    
+                    <!-- Feature Slide 4 -->
+                    <div class="min-w-full md:min-w-[33.333%] px-4 snap-start">
+                        <div class="bg-gradient-to-br from-salon-500 to-salon-700 rounded-xl p-8 text-white h-full">
+                            <h4 class="text-xl font-bold mb-4">Mobile App</h4>
+                            <p class="mb-4">Manage appointments, access exclusive content, and earn rewards with our mobile application.</p>
+                            <a href="#" class="inline-block text-sm font-bold hover:underline mt-2">Download Now <i class="fas fa-arrow-right ml-1"></i></a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Slider controls -->
+                <div class="flex justify-center space-x-2 mt-6">
+                    <button class="w-3 h-3 rounded-full bg-salon-200 hover:bg-salon-500 transition duration-300 feature-dot active" data-index="0"></button>
+                    <button class="w-3 h-3 rounded-full bg-salon-200 hover:bg-salon-500 transition duration-300 feature-dot" data-index="1"></button>
+                    <button class="w-3 h-3 rounded-full bg-salon-200 hover:bg-salon-500 transition duration-300 feature-dot" data-index="2"></button>
+                    <button class="w-3 h-3 rounded-full bg-salon-200 hover:bg-salon-500 transition duration-300 feature-dot" data-index="3"></button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Services Section -->
+    <section id="services" class="py-20 bg-white">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-16 fade-in-up">
+                <h2 class="text-lg text-salon-500 font-medium mb-2">Our Services</h2>
+                <h3 class="text-4xl font-serif font-light mb-4">Luxury Beauty <span class="text-salon-500 font-bold">Experiences</span></h3>
+                <p class="text-gray-600 max-w-2xl mx-auto">Discover our comprehensive range of premium services designed to enhance your natural beauty and provide a rejuvenating experience.</p>
+            </div>
+            
+            <!-- Service Categories Tabs -->
+            <div class="mb-12 fade-in-up">
+                <div class="flex flex-wrap justify-center gap-2 mb-12">
+                    <button class="service-tab bg-salon-500 text-white py-2 px-6 rounded-full text-sm font-medium transition duration-300 hover:shadow-md" data-category="all">All Services</button>
+                    <button class="service-tab bg-white text-salon-500 border border-salon-500 py-2 px-6 rounded-full text-sm font-medium transition duration-300 hover:shadow-md" data-category="hair">Hair</button>
+                    <button class="service-tab bg-white text-salon-500 border border-salon-500 py-2 px-6 rounded-full text-sm font-medium transition duration-300 hover:shadow-md" data-category="nails">Nails</button>
+                    <button class="service-tab bg-white text-salon-500 border border-salon-500 py-2 px-6 rounded-full text-sm font-medium transition duration-300 hover:shadow-md" data-category="skin">Skin</button>
+                    <button class="service-tab bg-white text-salon-500 border border-salon-500 py-2 px-6 rounded-full text-sm font-medium transition duration-300 hover:shadow-md" data-category="body">Body</button>
+                    <button class="service-tab bg-white text-salon-500 border border-salon-500 py-2 px-6 rounded-full text-sm font-medium transition duration-300 hover:shadow-md" data-category="makeup">Makeup</button>
+                </div>
+            </div>
+            
+            <!-- Services Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Service 1 -->
+                <div class="service-card bg-white rounded-xl shadow-lg overflow-hidden transition duration-300 fade-in-up" data-category="hair">
+                    <div class="h-48 bg-gradient-to-br from-salon-400 to-salon-600 flex items-center justify-center">
+                        <i class="fas fa-cut text-white text-5xl"></i>
+                    </div>
+                    <div class="p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-xl font-bold">Signature Haircut</h3>
+                            <span class="text-sm font-medium bg-salon-100 text-salon-700 py-1 px-3 rounded-full">from $55</span>
+                        </div>
+                        <p class="text-gray-600 mb-6">Professional consultation, relaxing shampoo experience, precision cut, and expert styling tailored to enhance your features.</p>
+                        <div class="flex justify-between items-center">
+                            <div class="text-sm text-gray-500"><i class="far fa-clock mr-1"></i> 60 minutes</div>
+                            <a href="#appointment" class="text-salon-500 hover:text-salon-600 font-medium text-sm">Book Now <i class="fas fa-arrow-right ml-1"></i></a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Service 2 -->
+                <div class="service-card bg-white rounded-xl shadow-lg overflow-hidden transition duration-300 fade-in-up" data-category="hair">
+                    <div class="h-48 bg-gradient-to-br from-salon-400 to-salon-600 flex items-center justify-center">
+                        <i class="fas fa-palette text-white text-5xl"></i>
+                    </div>
+                    <div class="p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-xl font-bold">Luxury Color</h3>
+                            <span class="text-sm font-medium bg-salon-100 text-salon-700 py-1 px-3 rounded-full">from $85</span>
+                        </div>
+                        <p class="text-gray-600 mb-6">Custom color formulation using premium products for vibrant, long-lasting results that complement your skin tone.</p>
+                        <div class="flex justify-between items-center">
+                            <div class="text-sm text-gray-500"><i class="far fa-clock mr-1"></i> 90-120 minutes</div>
+                            <a href="#appointment" class="text-salon-500 hover:text-salon-600 font-medium text-sm">Book Now <i class="fas fa-arrow-right ml-1"></i></a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Service 3 -->
+                <div class="service-card bg-white rounded-xl shadow-lg overflow-hidden transition duration-300 fade-in-up" data-category="nails">
+                    <div class="h-48 bg-gradient-to-br from-salon-400 to-salon-600 flex items-center justify-center">
+                        <i class="fas fa-hand-sparkles text-white text-5xl"></i>
+                    </div>
+                    <div class="p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-xl font-bold">Gel Manicure</h3>
+                            <span class="text-sm font-medium bg-salon-100 text-salon-700 py-1 px-3 rounded-full">from $40</span>
+                        </div>
+                        <p class="text-gray-600 mb-6">Long-lasting gel polish application with meticulous nail preparation, cuticle care, and hand massage.</p>
+                        <div class="flex justify-between items-center">
+                            <div class="text-sm text-gray-500"><i class="far fa-clock mr-1"></i> 45 minutes</div>
+                            <a href="#appointment" class="text-salon-500 hover:text-salon-600 font-medium text-sm">Book Now <i class="fas fa-arrow-right ml-1"></i></a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Service 4 -->
+                <div class="service-card bg-white rounded-xl shadow-lg overflow-hidden transition duration-300 fade-in-up" data-category="skin">
+                    <div class="h-48 bg-gradient-to-br from-salon-400 to-salon-600 flex items-center justify-center">
+                        <i class="fas fa-spa text-white text-5xl"></i>
+                    </div>
+                    <div class="p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-xl font-bold">Signature Facial</h3>
+                            <span class="text-sm font-medium bg-salon-100 text-salon-700 py-1 px-3 round"></span>
+                       </div>
+
+                       </html> 
